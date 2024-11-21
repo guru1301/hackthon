@@ -143,9 +143,13 @@
                     <input type="number" id="child-tickets" name="child-tickets" min="0" value="0">
                 </div>
                 <div class="ticket-item">
-                    <label for="camera-tickets">Camera Tickets (50 INR each):</label>
-                    <input type="number" id="camera-tickets" name="camera-tickets" min="0" value="0">
+                    <label>Camera Tickets (50 INR each):</label>
+                    <input type="radio" id="camera-yes" name="camera-tickets" value="yes">
+                    <label for="camera-yes">Yes</label>
+                    <input type="radio" id="camera-no" name="camera-tickets" value="no" checked>
+                    <label for="camera-no">No</label>
                 </div>
+                
                 <button type="button" id="add-to-cart">Add to Cart</button>
             </form>
             <div id="cart-summary">
@@ -158,16 +162,16 @@
             </div>
         </div>
     </section>
-      <!-- Dialogflow Messenger Element -->
-    <!-- Chatbot Container -->
-<div id="chatbot-container">
-    <df-messenger
-      intent="WELCOME"
-      chat-title="chat-bot"
-      agent-id="78900d2b-ae24-49df-9988-14e38184eb6f"
-      language-code="en"
-    ></df-messenger>
-</div>
+
+    <!-- Dialogflow Messenger Element -->
+    <div id="chatbot-container">
+        <df-messenger
+          intent="WELCOME"
+          chat-title="chat-bot"
+          agent-id="78900d2b-ae24-49df-9988-14e38184eb6f"
+          language-code="en"
+        ></df-messenger>
+    </div>
     
 
     <footer>
@@ -176,12 +180,14 @@
         </div>
     </footer>
 
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
     <script>
         document.getElementById('add-to-cart').addEventListener('click', function() {
             const adultTickets = parseInt(document.getElementById('adult-tickets').value) || 0;
             const childTickets = parseInt(document.getElementById('child-tickets').value) || 0;
-            const cameraTickets = parseInt(document.getElementById('camera-tickets').value) || 0;
-            
+            const cameraTickets = document.querySelector('input[name="camera-tickets"]:checked').value;
+
             const cartItems = [];
             let totalPrice = 0;
 
@@ -193,9 +199,9 @@
                 cartItems.push(`Children Tickets: ${childTickets} x 20 INR`);
                 totalPrice += childTickets * 20;
             }
-            if (cameraTickets > 0) {
-                cartItems.push(`Camera Tickets: ${cameraTickets} x 50 INR`);
-                totalPrice += cameraTickets * 50;
+            if (cameraTickets === "yes") {
+                cartItems.push(`Camera Tickets: 1 x 50 INR`);
+                totalPrice += 50;
             }
 
             const cartItemsList = document.getElementById('cart-items');
@@ -210,8 +216,38 @@
         });
 
         document.getElementById('checkout').addEventListener('click', function() {
-            // Replace 'https://example.com/checkout' with your checkout page URL
-            window.location.href = 'https://rzp.io/l/FYmpumO';
+            const totalPriceText = document.getElementById('total-price').textContent;
+            const totalPrice = parseInt(totalPriceText.replace(/\D/g, '')) || 0;
+
+            if (totalPrice === 0) {
+                alert('Your cart is empty! Please add items to the cart.');
+                return;
+            }
+
+            const options = {
+                key: "rzp_test_VU7G23ElHpKfH3", // Replace with your Razorpay API key
+                amount: totalPrice * 100, // Razorpay accepts amounts in paise
+                currency: "INR",
+                name: "Indian Museum",
+                description: "Ticket Booking",
+                handler: function(response) {
+                    alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
+                    // You can redirect or process booking confirmation here
+                },
+                prefill: {
+                    name: document.getElementById('name').value,
+                    email: document.getElementById('email').value
+                },
+                notes: {
+                    address: "Razorpay Test"
+                },
+                theme: {
+                    color: "#28a745"
+                }
+            };
+
+            const rzp1 = new Razorpay(options);
+            rzp1.open();
         });
     </script>
 </body>
